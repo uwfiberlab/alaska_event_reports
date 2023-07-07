@@ -1,0 +1,84 @@
+source /home/efwillia/.bashrc
+
+#alias gmt = '/home/efwillia/miniconda3/bin/gmt'
+
+gmt gmtset PS_MEDIA letter
+gmt gmtset FONT_ANNOT_PRIMARY 8p,0,black
+gmt gmtset FONT_ANNOT_SECONDARY 8p,0,black
+gmt gmtset FONT_HEADING 10p,0,black
+gmt gmtset FONT_LABEL 10p,0,black
+gmt gmtset FONT_TITLE 12p,0,black
+gmt gmtset MAP_FRAME_TYPE plain
+gmt gmtset MAP_LABEL_OFFSET 10p
+gmt gmtset MAP_TITLE_OFFSET 10p
+
+open="-P -K"
+add="-P -K -O"
+close="-P -O"
+
+wdir="/home/efwillia/research/earthquakes/alaska_event_reports"
+gdir="/home/efwillia/research/earthquakes/alaska_event_reports/gmt"
+fdir="/home/efwillia/research/earthquakes/alaska_event_reports/tmp"
+
+date=$(awk 'NR==1' $fdir/info.txt)
+arr1=$(awk 'NR==2' $fdir/info.txt)
+arr2=$(awk 'NR==3' $fdir/info.txt)
+arr3=$(awk 'NR==4' $fdir/info.txt)
+
+page1=$gdir/"1.ps"
+pages=("$page1")
+
+RJ0="-R0/1/0/1 -JX1i"
+RJ1="-R-154/54.5/-149/63r -JOa-150/60/50/4i"
+RJ2="-R-60/60/0/60 -JX6.5i/3i"
+
+gmt makecpt -Cfes -T-2000/2000/10 > $gdir/cpt1
+gmt makecpt -Clajolla -T0/150/1 > $gdir/cpt2
+gmt makecpt -Cvik -T-1/1/0.01 > $gdir/cpt3
+
+echo "0 0 LT Alaska DAS" | gmt pstext -X0.8i -Y10.3i $RJ0 -F+f16p,1,black+j -N $open > $page1
+echo "0 0 LT Earthquake Summary" | gmt pstext -Y-0.3i $RJ0 -F+f16p,1,black+j -N $add >> $page1
+echo "0 0 LT $date" | gmt pstext -Y-0.3i $RJ0 -F+f16p,1,black+j -N $add >> $page1
+echo "0 0 LT Array \t Files \t Data" | gmt pstext -Y-0.4i $RJ0 -F+f12p,1,black+j -N $add >> $page1
+echo "0 0 LT $arr1" | gmt pstext -Y-0.2i $RJ0 -F+f12p,0,black+j -N $add >> $page1
+echo "0 0 LT $arr2" | gmt pstext -Y-0.2i $RJ0 -F+f12p,0,black+j -N $add >> $page1
+echo "0 0 LT $arr3 events archived" | gmt pstext -Y-0.3i $RJ0 -F+f12p,1,black+j -N $add >> $page1
+
+gmt grdimage -X3i -Y-0.5i $gdir/GMRT.grd $RJ1 -I$gdir/GMRT.int -C$gdir/cpt1 -Ba2f1g2 -BWESN $add >> $page1
+gmt pscoast  $RJ1 -Dh -W0.5p,black -Clightblue $add >> $page1
+gmt psxy $gdir/KKFLS_geom.xy $RJ1 -W2p,red $add >> $page1
+gmt psxy $gdir/TERRA_geom.xy $RJ1 -W2p,red $add >> $page1
+gmt psxy $fdir/events.xy $RJ1 -Sc -i0,1,2,3s0.2 -C$gdir/cpt2 -W1p,black $add >> $page1
+gmt psxy -X-1i -Y1.3i $gdir/scale.xy -R0/1/0/1 -JX1i/2i -Sc -i0,1,2s0.2 -W1p,black $add >> $page1
+awk '{print $1,$2,$4,$5}' $gdir/scale.xy | gmt pstext -R0/1/0/1 -JX1i/2i -F+f10p,0,black+j $add >> $page1
+gmt psscale -Y-1.5i -C$gdir/cpt2 -Dx0.5i/0i+w1i/0.1i+ma -Bxa50+l"Depth (km)" $add >> $page1
+
+ii=1
+page=0
+while read fname ; do
+	if [ $ii -eq 1 ]; then
+		gmt grdimage -X-1.8i -Y-3.4i $fdir/$fname $RJ2 -Bxa20f10+l"Distance from Homer (km)"\
+		       	-Bya30f10+l"Time (s)" -BWeSn -C$gdir/cpt3 $add >> ${pages[$page]}
+	elif [ $ii -eq 2 ]; then
+		gmt grdimage -Y-3.7i $fdir/$fname $RJ2 -Bxa20f10+l"Distance from Homer (km)"\
+		       	-Bya30f10+l"Time (s)" -BWeSn -C$gdir/cpt3 $add >> ${pages[$page]}
+	elif [ $(($ii % 3)) -eq 0 ]; then
+		echo "-0.4 0.4 RT $ii" | gmt pstext -Xr0i -Yr0i $RJ0 -F+f10p,1,black+j $close >> ${pages[$page]}
+		pages+=("$gdir/$(($ii/3+1)).ps")
+		let "page += 1"
+		gmt grdimage -X1i -Y7.7i $fdir/$fname $RJ2 -Bxa20f10+l"Distance from Homer (km)"\
+			-Bya30f10+l"Time (s)" -BWeSn -C$gdir/cpt3 $open > ${pages[$page]}
+	else
+		gmt grdimage -Y-3.7i $fdir/$fname $RJ2 -Bxa20f10+l"Distance from Homer (km)"\
+                        -Bya30f10+l"Time (s)" -BWeSn+t -C$gdir/cpt3 $add >> ${pages[$page]}
+	fi
+	title=$(<$fdir/$(($ii-1)).txt)
+	echo "-58 58 LT $title" | gmt pstext $RJ2 -F+f10p,1,black+j -Gwhite $add >> ${pages[$page]}
+	let "ii += 1"
+done < $fdir/event_list.txt
+
+echo "-0.4 0.4 RT $ii" | gmt pstext -Xr0i -Yr0i $RJ0 -F+f10p,1,black+j $close >> ${pages[$page]}
+
+gmt psconvert $(printf '%s' "${pages[*]}") -TF -F$1
+
+

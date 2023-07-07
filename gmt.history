@@ -1,0 +1,11 @@
+# GMT 6 Session common arguments shelf
+BEGIN GMT 6.4.0
+B	xa20f10+lDistance from Homer (km)ya30f10+lTime (s)WeSn+t
+J	X
+JO	Oa-150/60/50/4i
+JX	X1i
+R	0/1/0/1
+X	r0i
+Y	r0i
+@L	7
+END
