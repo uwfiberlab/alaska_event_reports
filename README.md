@@ -4,7 +4,7 @@ Scripts for automatic generation of event files and daily earthquake reports. RE
 
 Executed each day at 01:00 UTC by adding the following line to `/etc/crontab`:
 ```
-\texttt{  0  1  *  *  * efwillia  /home/efwillia/research/earthquakes/live_scripts/monitor_events.py}
+0  1  *  *  * efwillia  /home/efwillia/research/earthquakes/live_scripts/monitor_events.py
 ```
 
 Note that absolute paths are required throughout to run in the minimal cron shell environment. I have also added relevant parts of my `$PATH` variable:
