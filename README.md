@@ -1,6 +1,8 @@
 # Alaska event reports
 
-Scripts for automatic generation of event files and daily earthquake reports. REMINDER FOR ETHAN: the copy of this repository on the server is the actual live script, remember to test when making changes. 
+Scripts for automatic generation of event files and daily earthquake reports. 
+
+<b>REMINDER:</b> The copy of this repository on the server is the actual live script, remember to test when making changes. 
 
 Executed each day at 01:00 UTC by adding the following line to `/etc/crontab`:
 ```
@@ -23,19 +25,24 @@ The event reports are produced and broadcast by the `generate_report()` function
 >>sudo dnf install alpine
 >>alpine
 ```
+
 (2) Navigate to the configuration menu by entering `s` then `c`. Change the name, domain (`uw.edu`), and SMTP server (`smtp.uw.edu`), then exit with `e` and `q`.
+
 (3) Create a password file for Alpine, and launch Alpine using this file.
 ```
 >>touch .pine-passfile
 >>alpine -passfile .pine-passfile
 ```
+
 (4) Send an arbitrary email using `c` to compose and `[CTRL]+x` to send, when prompted enter UW login credentials, let Alpine save these credentials and set a master password. 
+
 (5) Find the password and encrypt it.
 ```
 >>cd .alpine-smime/.pwd
 >>mv MasterPassword.key MasterPassword.key.orig
 >>openssl rsa -in MasterPassword.key.orig -out MasterPassword.key
 ```
+
 (6) Now, as long as Alpine is launched pointing to the password file you can send email without being prompted for login credentials. This only works for sending email with SMTP, as most email clients require oauth2 for IMAP which is challenging to configure. Send email from the command line using the following, for example:
 ```
 >>alpine -passfile ~/.pine-passfile -I ^X,y -subject "SUBJ" -attach "ATTCH.pdf" TO@domain.edu < BODY.txt
