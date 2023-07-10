@@ -347,7 +347,8 @@ def assess_events(outdir,anames,eventpaths):
         x[ii] = org.longitude; y[ii] = org.latitude
         z[ii] = org.depth*1e-3; m[ii] = mag.mag
         with open(os.path.join(outdir,'%d.txt'%ii),'w') as fp:
-            fp.write('%s %.2f \t %s\n' % (mag.magnitude_type,mag.mag,evt['text']))
+            fp.write('%s %.2f \t %s \t %s km depth \t %s \n' % \
+                    (mag.magnitude_type,mag.mag,evt['text'],z[ii],org['time'].strftime('%Y-%m-%d,%H:%M:%S')))
     # Save all events for map plot
     np.savetxt(os.path.join(outdir,'events.xy'),np.column_stack((x,y,z,m)))
     np.savetxt(os.path.join(outdir,'event_list.txt'),np.arange(len(x)),fmt='%s.nc')
