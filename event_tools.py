@@ -330,9 +330,11 @@ def assess_events(outdir,anames,eventpaths):
         ...
     '''
     # For each event, read QuakeML and write info for GMT
-    N = len(eventpaths)
-    x = np.zeros(N); y = np.zeros(N); z = np.zeros(N); m = np.zeros(N)
+    x = []; y = []; z = []; m = []
     for ii,eventpath in enumerate(eventpaths):
+        if not (os.path.exists(os.path.join(eventpath,'%s.h5'%anames[0])) and os.path.exists(os.path.join(eventpath,'%s.h5'%anames[1]))):
+            ii-=1
+            continue
         try:
             event = op.read_events(os.path.join(eventpath,'event.qml'),format='QUAKEML')[0]
         except:
@@ -344,11 +346,11 @@ def assess_events(outdir,anames,eventpaths):
             evt = event.event_descriptions[0]
         except:
             evt = {'text': 'No description available' }
-        x[ii] = org.longitude; y[ii] = org.latitude
-        z[ii] = org.depth*1e-3; m[ii] = mag.mag
+        x.append(org.longitude); y.append(org.latitude)
+        z.append(org.depth*1e-3); m.append(mag.mag)
         with open(os.path.join(outdir,'%d.txt'%ii),'w') as fp:
             fp.write('%s %.2f \t %s \t %.1f km depth \t %s \n' % \
-                    (mag.magnitude_type,mag.mag,evt['text'],z[ii],org['time'].strftime('%Y-%m-%d,%H:%M:%S UTC')))
+                    (mag.magnitude_type,mag.mag,evt['text'],z[-1],org['time'].strftime('%Y-%m-%d,%H:%M:%S UTC')))
     # Save all events for map plot
     np.savetxt(os.path.join(outdir,'events.xy'),np.column_stack((x,y,z,m)))
     np.savetxt(os.path.join(outdir,'event_list.txt'),np.arange(len(x)),fmt='%s.nc')
@@ -358,6 +360,9 @@ def assess_events(outdir,anames,eventpaths):
         # Interval number of channels to plot (e.g. every 10th channel)
         FACTOR = 10
         # Load data
+        if not os.path.exists(os.path.join(eventpath,fname1)):
+            ii-=1
+            continue
         with h5py.File(os.path.join(eventpath,fname1),'r') as fp:
             data1 = fp['Acquisition']['Raw[0]']['RawData'][:,::FACTOR]
             dx = fp['Acquisition'].attrs['SpatialSamplingInterval']*FACTOR
