@@ -20,8 +20,11 @@ def get_event_list(t1,t2):
         otimes : origin times (for first available solution)
     '''
     # Get catalog events
-    client = Client('USGS')
-    catalog = client.get_events(starttime=t1,endtime=t2,catalog='ak',\
+    #client = Client('USGS')
+    #catalog = client.get_events(starttime=t1,endtime=t2,catalog='ak',\
+    #        includeallorigins=True,includeallmagnitudes=True)
+    client = Client('IRIS')
+    catalog = client.get_events(starttime=t1,endtime=t2,\
             includeallorigins=True,includeallmagnitudes=True)
     # Reference point near Homer, AK
     lat0 = 59.4405426
