@@ -19,16 +19,17 @@ def get_event_list(t1,t2):
         ttimes : P-wave arrival times from IASPEI91
         otimes : origin times (for first available solution)
     '''
+    # Reference point near Homer, AK
+    lat0 = 59.4405426
+    lon0 = -152.0276765
     # Get catalog events
     #client = Client('USGS')
     #catalog = client.get_events(starttime=t1,endtime=t2,catalog='ak',\
     #        includeallorigins=True,includeallmagnitudes=True)
     client = Client('IRIS')
-    catalog = client.get_events(starttime=t1,endtime=t2,\
-            includeallorigins=True,includeallmagnitudes=True)
-    # Reference point near Homer, AK
-    lat0 = 59.4405426
-    lon0 = -152.0276765
+    catalog = client.get_events(starttime=t1, endtime=t2,\
+            includeallorigins=True, includeallmagnitudes=True,\
+            latitude=lat0, longitude=lon0, maxradius=10)
     # Parameters for simple GMM
     a = -1
     b = 0.55
