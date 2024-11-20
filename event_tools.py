@@ -8,7 +8,7 @@ from obspy.core.event import Catalog
 from obspy import UTCDateTime
 from obspy.geodetics.base import locations2degrees, degrees2kilometers
 from obspy.taup import TauPyModel
-from scipy.signal import butter, filtfilt, detrend
+from scipy.signal import butter, filtfilt, detrend, convolve2d
 
 def get_event_list(t1,t2):
     '''
@@ -43,6 +43,8 @@ def get_event_list(t1,t2):
         lon = event.origins[0]['longitude']
         lat = event.origins[0]['latitude']
         dep = event.origins[0]['depth'] * 1e-3
+        if dep < 0:
+            dep = 0
         dis1 = locations2degrees(lat0,lon0,lat,lon)
         dis = degrees2kilometers(dis1)
         R = np.sqrt(dis**2 + dep**2)
@@ -368,23 +370,29 @@ def assess_events(outdir,anames,eventpaths):
             ii-=1
             continue
         with h5py.File(os.path.join(eventpath,fname1),'r') as fp:
-            data1 = fp['Acquisition']['Raw[0]']['RawData'][:,::FACTOR]
+            data1_tmp = fp['Acquisition']['Raw[0]']['RawData']
+            win = np.ones((1,FACTOR)) / FACTOR
+            data1 = convolve2d(data1_tmp,win,mode='valid')[:,::FACTOR]
             dx = fp['Acquisition'].attrs['SpatialSamplingInterval']*FACTOR
             fs = fp['Acquisition']['Raw[0]'].attrs['OutputDataRate']
         with h5py.File(os.path.join(eventpath,fname2),'r') as fp:
-            data2 = fp['Acquisition']['Raw[0]']['RawData'][:,::FACTOR]
+            data2_tmp = fp['Acquisition']['Raw[0]']['RawData']
+            data2 = convolve2d(data2_tmp,win,mode='valid')[:,::FACTOR] 
         # Format for plot
         data = np.concatenate((data1[:,::-1],data2),axis=1)
         x = np.arange(-data1.shape[1],data2.shape[1])*dx*1e-3
         t = np.arange(0,data1.shape[0])/fs
         data = data[t<=60,:]
         t = t[t<=60]
-        data = data[:,abs(x)<=60]
-        x = x[abs(x)<=60]
+        data = data[:,abs(x)<=100]
+        x = x[abs(x)<=100]
         # Detrend and filter
         data = detrend(data,axis=0)
         b, a = butter(4,[2,8],btype='bandpass',fs=fs)
         data = filtfilt(b,a,data,axis=0)
+        # Decimate after filtering
+        data = data[::3,:] # factor of 3 for 50 Hz is 16.667 Hz which preserves 8 Hz Nyquist
+        t = t[::3]
         # Normalize for plotting
         data /= 1.5*np.median(abs(data.flatten()))
         # Write to .nc file
@@ -396,7 +404,7 @@ def assess_events(outdir,anames,eventpaths):
         ds.close()
     return
 
-def generate_report(outdir,anames,fdirs,date,eventpaths):
+def generate_report(outdir,anames,fdirs,date,eventpaths,send_report=True):
     # (1) Assess data recorded
     assess_data('/home/efwillia/research/earthquakes/alaska_event_reports/tmp',anames,fdirs,date,eventpaths)
 
@@ -409,14 +417,17 @@ def generate_report(outdir,anames,fdirs,date,eventpaths):
 
     # (4) Send GMT plot
     # use 'test_email_list.txt' if debugging
-    with open('/home/efwillia/research/earthquakes/alaska_event_reports/email_list.txt','r') as emails:
-        TO = ','.join([address.strip() for address in emails.readlines()])
-    BODY = '/home/efwillia/research/earthquakes/alaska_event_reports/email.txt'
-    ATTCH = '%s.pdf' % os.path.join(outdir,reportname)
-    SUBJ = 'Earthquake update for %s' % date.strftime('%B %-d, %Y')
-    cmd = 'alpine -passfile ~/.pine-passfile -I ^X,y -subject "%s" -attach "%s" %s < %s' \
-            % (SUBJ, ATTCH, TO, BODY)
-    os.system(cmd)
+    if send_report:
+        email_list = '/home/efwillia/research/earthquakes/alaska_event_reports/email_list.txt'
+        #email_list = '/home/efwillia/research/earthquakes/alaska_event_reports/test_email_list.txt'
+        with open(email_list,'r') as emails:
+            TO = ','.join([address.strip() for address in emails.readlines()])
+        BODY = '/home/efwillia/research/earthquakes/alaska_event_reports/email.txt'
+        ATTCH = '%s.pdf' % os.path.join(outdir,reportname)
+        SUBJ = 'Earthquake update for %s' % date.strftime('%B %-d, %Y')
+        cmd = 'alpine -passfile ~/.pine-passfile -I ^X,y -subject "%s" -attach "%s" %s < %s' \
+                % (SUBJ, ATTCH, TO, BODY)
+        os.system(cmd)
 
     return
 

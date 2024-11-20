@@ -30,7 +30,7 @@ pages=("$page1")
 
 RJ0="-R0/1/0/1 -JX1i"
 RJ1="-R-154/54.5/-149/63r -JOa-150/60/50/4i"
-RJ2="-R-60/60/0/60 -JX6.5i/3i"
+RJ2="-R-80/80/0/60 -JX6.5i/3i"
 
 gmt makecpt -Cfes -T-2000/2000/10 > $gdir/cpt1
 gmt makecpt -Clajolla -T0/150/1 > $gdir/cpt2
@@ -46,8 +46,9 @@ echo "0 0 LT $arr3 events archived" | gmt pstext -Y-0.3i $RJ0 -F+f12p,1,black+j 
 
 gmt grdimage -X3i -Y-0.5i $gdir/GMRT.grd $RJ1 -I$gdir/GMRT.int -C$gdir/cpt1 -Ba2f1g2 -BWESN $add >> $page1
 gmt pscoast  $RJ1 -Dh -W0.5p,black -Clightblue $add >> $page1
-gmt psxy $gdir/KKFLS_geom.xy $RJ1 -W2p,red $add >> $page1
+#gmt psxy $gdir/KKFLS_geom.xy $RJ1 -W2p,red $add >> $page1
 gmt psxy $gdir/TERRA_geom.xy $RJ1 -W2p,red $add >> $page1
+gmt psxy $gdir/KKFLN_geom.xy $RJ1 -W2p,red $add >> $page1
 gmt psxy $fdir/events.xy $RJ1 -Sc -i0,1,2,3s0.2 -C$gdir/cpt2 -W1p,black $add >> $page1
 gmt psxy -X-1i -Y1.3i $gdir/scale.xy -R0/1/0/1 -JX1i/2i -Sc -i0,1,2s0.2 -W1p,black $add >> $page1
 awk '{print $1,$2,$4,$5}' $gdir/scale.xy | gmt pstext -R0/1/0/1 -JX1i/2i -F+f10p,0,black+j $add >> $page1
@@ -73,7 +74,7 @@ while read fname ; do
                         -Bya30f10+l"Time (s)" -BWeSn+t -C$gdir/cpt3 $add >> ${pages[$page]}
 	fi
 	title=$(<$fdir/$(($ii-1)).txt)
-	echo "-58 58 LT $title" | gmt pstext $RJ2 -F+f10p,1,black+j -Gwhite $add >> ${pages[$page]}
+	echo "-76 58 LT $title" | gmt pstext $RJ2 -F+f10p,1,black+j -Gwhite $add >> ${pages[$page]}
 	let "ii += 1"
 done < $fdir/event_list.txt
 
